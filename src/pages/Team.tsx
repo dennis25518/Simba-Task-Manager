@@ -1,5 +1,5 @@
 import React from "react";
-import { FiPhone, FiMessageCircle, FiMail } from "react-icons/fi";
+import { FiPhone, FiMessageCircle } from "react-icons/fi";
 import Sidebar from "../components/Sidebar";
 
 interface TeamMember {

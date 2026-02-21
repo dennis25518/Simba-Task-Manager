@@ -9,7 +9,7 @@ import ProductivityChart from "../components/ProductivityChart";
 import StatCard from "../components/StatCard";
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const {} = useAuth();
   const { tasks, getTaskStats, addTask } = useTask();
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   const [newTask, setNewTask] = useState({

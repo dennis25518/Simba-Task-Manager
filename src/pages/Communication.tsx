@@ -60,7 +60,7 @@ const Communication: React.FC = () => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const peersRef = useRef<Map<string, PeerConnection>>(new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const callTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Initialize Socket.io connection
   useEffect(() => {
@@ -249,7 +249,7 @@ const Communication: React.FC = () => {
       }
     });
 
-    peer.on("stream", (stream) => {
+    peer.on("stream", (stream: MediaStream) => {
       console.log("Received stream from", peerId);
       const peerConnection = peersRef.current.get(peerId);
       if (peerConnection) {
@@ -257,7 +257,7 @@ const Communication: React.FC = () => {
       }
     });
 
-    peer.on("error", (err) => {
+    peer.on("error", (err: Error) => {
       console.error("Peer error:", err);
       setError(`Peer connection error: ${err.message}`);
     });

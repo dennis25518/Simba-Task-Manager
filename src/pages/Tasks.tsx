@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiPlus, FiTrash2, FiCalendar, FiTag } from "react-icons/fi";
+import { FiPlus, FiTrash2, FiCalendar } from "react-icons/fi";
 import Sidebar from "../components/Sidebar";
 
 interface Task {
