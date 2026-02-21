@@ -34,7 +34,25 @@ interface PeerConnection {
   stream: MediaStream | null;
 }
 
-const SOCKET_SERVER_URL = "http://localhost:5000";
+// Determine server URL based on environment
+const getSocketServerURL = () => {
+  // Check if we have a custom socket server URL from env
+  const customUrl = import.meta.env.VITE_SOCKET_SERVER_URL;
+  if (customUrl) {
+    return customUrl;
+  }
+
+  // In production (Vercel frontend + Railway backend)
+  if (import.meta.env.PROD || window.location.hostname !== "localhost") {
+    // Replace this with your Railway backend URL after deployment
+    return process.env.VITE_SOCKET_SERVER_URL || "http://localhost:5000";
+  }
+
+  // In development
+  return "http://localhost:5000";
+};
+
+const SOCKET_SERVER_URL = getSocketServerURL();
 
 const Communication: React.FC = () => {
   const [socket, setSocket] = useState<Socket | null>(null);

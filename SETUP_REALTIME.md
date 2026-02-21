@@ -4,14 +4,16 @@
 
 This application now includes **real-time group chat** and **WebRTC video calls** functionality. To use these features, you need to run the signaling server.
 
-### Prerequisites
+### For Local Development
+
+#### Prerequisites
 
 - Node.js installed (v14 or higher)
 - npm packages already installed (socket.io, socket.io-client, simple-peer, express, cors)
 
-### Setup Instructions
+#### Setup Instructions
 
-#### 1. Start the Signaling Server
+##### 1. Start the Signaling Server
 
 In a **new terminal** (keep this running while using the app):
 
@@ -26,7 +28,7 @@ You should see:
 Signaling server running on http://localhost:5000
 ```
 
-#### 2. Start the React Development Server
+##### 2. Start the React Development Server
 
 In **another terminal**:
 
@@ -34,6 +36,51 @@ In **another terminal**:
 cd "c:\Users\USER\Desktop\Projects\Simba Task Manager"
 npm run dev
 ```
+
+### For Production Deployment (Railway + Vercel)
+
+Railway handles the backend signaling server, while Vercel handles the frontend.
+
+#### Step 1: Deploy Backend to Railway
+
+1. Go to https://railway.app/dashboard
+2. Click **"Create New Project"**
+3. Select **"Deploy from GitHub repo"**
+4. Choose your **dennis25518/Simba-Task-Manager** repository
+5. Select **"Node.js"** as the service
+6. Railway will auto-detect the configuration
+7. Click **"Deploy"** and wait for completion
+8. Once deployed, you'll get a URL like: `https://simba-task-manager-production.railway.app`
+
+#### Step 2: Update Frontend Environment Variables
+
+1. Go to your **Vercel dashboard**
+2. Select your **Simba Task Manager** project
+3. Go to **Settings** → **Environment Variables**
+4. Add new variable:
+   - **Name**: `VITE_SOCKET_SERVER_URL`
+   - **Value**: Your Railway backend URL (e.g., `https://simba-task-manager-production.railway.app`)
+5. Click **"Save"**
+6. Trigger a new deployment (or push a commit to redeploy)
+
+#### Step 3: Redeploy Frontend to Vercel
+
+After setting the environment variable:
+
+```bash
+git add .
+git commit -m "Add Railway backend URL configuration"
+git push
+```
+
+This triggers an automatic redeploy on Vercel with the new backend URL.
+
+#### Step 4: Test Production
+
+1. Visit your **Vercel production URL** (e.g., `https://simba-task-manager.vercel.app`)
+2. Navigate to the **Chat** section
+3. The app should connect to your Railway backend
+4. Test with multiple browser tabs to verify real-time chat and video calls work!
 
 ### Testing the Features
 
