@@ -1,8 +1,0 @@
-{
-    "buildCommand": "cd client && npm run build",
-    "outputDirectory": "client/dist",
-    "framework": "vite",
-    "env": {
-        "VITE_SOCKET_SERVER_URL": "https://simba-task-manager-production.up.railway.app"
-    }
-}
