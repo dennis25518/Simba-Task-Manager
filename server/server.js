@@ -14,6 +14,15 @@ const io = new Server(server, {
 
 app.use(cors());
 
+// Health check endpoint
+app.get("/", (req, res) => {
+  res.json({ status: "Server is running", message: "Connect via Socket.io" });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ status: "healthy" });
+});
+
 const PORT = process.env.PORT || 5000;
 
 // Store active rooms and participants
