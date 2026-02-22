@@ -1,0 +1,9 @@
+{
+    "buildCommand": "cd client && npm run build",
+    "outputDirectory": "client/dist",
+    "devCommand": "cd client && npm run dev",
+    "installCommand": "npm install --legacy-peer-deps",
+    "env": {
+        "VITE_SOCKET_SERVER_URL": "https://simba-task-manager-production.up.railway.app"
+    }
+}
