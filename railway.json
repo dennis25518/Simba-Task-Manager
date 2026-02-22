@@ -1,6 +1,5 @@
 {
     "build": {
-        "builder": "nixpacks",
-        "buildCommand": "echo 'Build handled by Procfile'"
+        "builder": "dockerfile"
     }
 }
