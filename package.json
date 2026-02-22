@@ -4,11 +4,13 @@
     "description": "Simba Task Manager - Full Stack Application with Real-Time Communication",
     "type": "module",
     "license": "MIT",
+    "private": true,
     "scripts": {
         "start": "cd server && node server.js"
     },
+    "engineStrict": true,
     "engines": {
-        "node": ">=14.0.0",
-        "npm": ">=6.0.0"
+        "node": "18.x",
+        "npm": "9.x"
     }
 }
