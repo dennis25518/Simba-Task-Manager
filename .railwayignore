@@ -1,3 +1,8 @@
-client/
-.git/
-.vite/
+client
+.git
+.gitignore
+.vscode
+*.local
+dist
+node_modules
+.vite

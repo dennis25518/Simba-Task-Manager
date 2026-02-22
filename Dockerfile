@@ -1,15 +1,13 @@
 FROM node:18-alpine
 
+WORKDIR /app
+
+# Copy only server directory
+COPY server/ ./server/
+
+# Install dependencies in server
 WORKDIR /app/server
-
-# Copy package files
-COPY server/package*.json ./
-
-# Install production dependencies only
 RUN npm ci --only=production
-
-# Copy application code
-COPY server/ .
 
 # Set port
 ENV PORT=5000
