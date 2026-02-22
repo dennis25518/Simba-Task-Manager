@@ -1,25 +1,64 @@
 # Simba Task Manager - Real-Time Communication Setup
 
+## Project Structure (Monorepo)
+
+```
+.
+├── client/                      # React Frontend
+│   ├── src/
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── ...
+├── server/                      # Express Backend
+│   ├── server.js
+│   ├── package.json
+│   └── ...
+├── package.json                 # Root package.json (monorepo)
+└── Procfile                     # Railway deployment config
+```
+
 ## Running the Application with WebRTC Support
 
-This application now includes **real-time group chat** and **WebRTC video calls** functionality. To use these features, you need to run the signaling server.
+This application now includes **real-time group chat** and **WebRTC video calls** functionality. To use these features, you need to run both the signaling server and React development server.
 
 ### For Local Development
 
 #### Prerequisites
 
 - Node.js installed (v14 or higher)
-- npm packages already installed (socket.io, socket.io-client, simple-peer, express, cors)
+- npm packages installed at both root and client/server levels
 
 #### Setup Instructions
 
-##### 1. Start the Signaling Server
-
-In a **new terminal** (keep this running while using the app):
+##### 1. Install Dependencies (First time only)
 
 ```bash
 cd "c:\Users\USER\Desktop\Projects\Simba Task Manager"
-node server.js
+npm install              # Install root dependencies
+npm install:all          # Install client and server dependencies
+```
+
+##### 2. Start Both Servers
+
+**Option A: Run both servers automatically (Recommended)**
+
+```bash
+npm run dev
+```
+
+This uses `concurrently` to run both servers:
+
+- Signaling server on http://localhost:5000
+- React dev server on http://localhost:5173
+
+**Option B: Run servers separately**
+
+In **Terminal 1** (Signaling Server):
+
+```bash
+cd "c:\Users\USER\Desktop\Projects\Simba Task Manager"
+cd server
+npm start
 ```
 
 You should see:
@@ -28,12 +67,56 @@ You should see:
 Signaling server running on http://localhost:5000
 ```
 
-##### 2. Start the React Development Server
-
-In **another terminal**:
+In **Terminal 2** (React Development Server):
 
 ```bash
 cd "c:\Users\USER\Desktop\Projects\Simba Task Manager"
+cd client
+npm run dev
+```
+
+## For Production Deployment (Railway)
+
+### For Local Development
+
+#### Prerequisites
+
+- Node.js installed (v14 or higher)
+- npm packages already installed (npm install:all completed)
+
+#### Setup Instructions
+
+##### 1. Start Both Servers (via npm concurrently)
+
+```bash
+cd "c:\Users\USER\Desktop\Projects\Simba Task Manager"
+npm run dev
+```
+
+This will start:
+
+- Signaling server on http://localhost:5000
+- React dev server on http://localhost:5173
+
+Alternatively, start them separately:
+
+**Terminal 1 - Signaling Server:**
+
+```bash
+cd "c:\Users\USER\Desktop\Projects\Simba Task Manager\server"
+npm start
+```
+
+You should see:
+
+```
+Signaling server running on http://localhost:5000
+```
+
+**Terminal 2 - React Dev Server:**
+
+```bash
+cd "c:\Users\USER\Desktop\Projects\Simba Task Manager\client"
 npm run dev
 ```
 

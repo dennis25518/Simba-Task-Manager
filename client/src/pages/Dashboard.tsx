@@ -1,7 +1,6 @@
-import React, { useState } from "react";
-import { FiPlus, FiUsers } from "react-icons/fi";
+import React from "react";
+import { FiUsers } from "react-icons/fi";
 import { BsCheckCircle, BsCircle, BsClock } from "react-icons/bs";
-import { useAuth } from "../hooks/useAuth";
 import { useTask } from "../hooks/useTask";
 import Sidebar from "../components/Sidebar";
 import TaskCard from "../components/TaskCard";
@@ -9,33 +8,8 @@ import ProductivityChart from "../components/ProductivityChart";
 import StatCard from "../components/StatCard";
 
 const Dashboard: React.FC = () => {
-  const {} = useAuth();
-  const { tasks, getTaskStats, addTask } = useTask();
-  const [showNewTaskForm, setShowNewTaskForm] = useState(false);
-  const [newTask, setNewTask] = useState({
-    title: "",
-    description: "",
-    priority: "medium" as "high" | "medium" | "low",
-  });
-
+  const { tasks, getTaskStats } = useTask();
   const stats = getTaskStats();
-
-  const handleAddTask = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newTask.title.trim()) {
-      addTask({
-        id: Date.now().toString(),
-        title: newTask.title,
-        description: newTask.description,
-        status: "pending",
-        priority: newTask.priority,
-        dueDate: new Date().toISOString().split("T")[0],
-        project: "Simba Express",
-      });
-      setNewTask({ title: "", description: "", priority: "medium" });
-      setShowNewTaskForm(false);
-    }
-  };
 
   const upcomingTasks = tasks
     .filter((t) => t.status !== "completed")

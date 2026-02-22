@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   FiSend,
   FiPhoneOff,
@@ -28,6 +28,11 @@ interface Participant {
   userId: string;
 }
 
+interface SignalData {
+  type?: string;
+  candidate?: RTCIceCandidate;
+}
+
 interface PeerConnection {
   peerId: string;
   peer: SimplePeer.Instance;
@@ -42,10 +47,10 @@ const getSocketServerURL = () => {
     return customUrl;
   }
 
-  // In production (Vercel frontend + Railway backend)
-  if (import.meta.env.PROD || window.location.hostname !== "localhost") {
-    // Replace this with your Railway backend URL after deployment
-    return process.env.VITE_SOCKET_SERVER_URL || "http://localhost:5000";
+  // In production on Railway
+  if (import.meta.env.PROD && window.location.hostname !== "localhost") {
+    // Use same host but port 5000 for backend
+    return `http://${window.location.hostname}:5000`;
   }
 
   // In development
@@ -59,7 +64,6 @@ const Communication: React.FC = () => {
   const [connected, setConnected] = useState(false);
   const [roomId] = useState("simba-team-chat");
   const [userName, setUserName] = useState("Anonymous");
-  const [userId] = useState(`user_${Math.random().toString(36).substr(2, 9)}`);
 
   // Chat states
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -79,6 +83,66 @@ const Communication: React.FC = () => {
   const peersRef = useRef<Map<string, PeerConnection>>(new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Initialize userId only once using ref with initializer function
+  const userIdRef = useRef<string>("");
+
+  // Generate userId on mount only
+  useEffect(() => {
+    if (!userIdRef.current) {
+      userIdRef.current = `user_${Math.random().toString(36).substring(7)}`;
+    }
+  }, []);
+
+  // Create peer function using useCallback to avoid hoisting issues
+  const createPeer = useCallback(
+    (
+      initiator: boolean,
+      peerId: string,
+      socket: Socket,
+    ): SimplePeer.Instance => {
+      const peer = new SimplePeer({
+        initiator,
+        trickle: false,
+        stream: localStreamRef.current || undefined,
+        config: {
+          iceServers: [
+            { urls: ["stun:stun.l.google.com:19302"] },
+            { urls: ["stun:stun1.l.google.com:19302"] },
+          ],
+        },
+      });
+
+      peer.on("signal", (data: SignalData) => {
+        if (data.type === "offer") {
+          socket.emit("send-offer", { offer: data, toSocket: peerId });
+        } else if (data.type === "answer") {
+          socket.emit("send-answer", { answer: data, toSocket: peerId });
+        } else if (data.candidate) {
+          socket.emit("send-ice-candidate", {
+            candidate: data,
+            toSocket: peerId,
+          });
+        }
+      });
+
+      peer.on("stream", (stream: MediaStream) => {
+        console.log("Received stream from", peerId);
+        const peerConnection = peersRef.current.get(peerId);
+        if (peerConnection) {
+          peerConnection.stream = stream;
+        }
+      });
+
+      peer.on("error", (err: Error) => {
+        console.error("Peer error:", err);
+        setError(`Peer connection error: ${err.message}`);
+      });
+
+      peersRef.current.set(peerId, { peerId, peer, stream: null });
+      return peer;
+    },
+    [],
+  );
 
   // Initialize Socket.io connection
   useEffect(() => {
@@ -92,7 +156,11 @@ const Communication: React.FC = () => {
     newSocket.on("connect", () => {
       console.log("Connected to signaling server");
       setConnected(true);
-      newSocket.emit("join-room", { roomId, userName, userId });
+      newSocket.emit("join-room", {
+        roomId,
+        userName,
+        userId: userIdRef.current,
+      });
     });
 
     newSocket.on("disconnect", () => {
@@ -145,48 +213,53 @@ const Communication: React.FC = () => {
     });
 
     // WebRTC Signaling events
-    newSocket.on("receive-offer", async (data) => {
-      console.log("Received offer from", data.fromSocket);
-      const peer = createPeer(false, data.fromSocket, newSocket);
-      try {
-        await peer.setRemoteDescription(new RTCSessionDescription(data.offer));
-        const answer = await peer.createAnswer();
-        await peer.setLocalDescription(answer);
-        newSocket.emit("send-answer", {
-          answer: peer.localDescription,
-          toSocket: data.fromSocket,
-        });
-      } catch (err) {
-        console.error("Error handling offer:", err);
-      }
-    });
-
-    newSocket.on("receive-answer", async (data) => {
-      console.log("Received answer from", data.fromSocket);
-      const peerConnection = peersRef.current.get(data.fromSocket);
-      if (peerConnection) {
+    newSocket.on(
+      "receive-offer",
+      (data: { offer: SignalData; fromSocket: string }) => {
+        console.log("Received offer from", data.fromSocket);
+        const peer = createPeer(false, data.fromSocket, newSocket);
         try {
-          await peerConnection.peer._pc?.setRemoteDescription(
-            new RTCSessionDescription(data.answer),
-          );
+          // Signal the peer with the received offer
+          peer.signal(data.offer as RTCSessionDescriptionInit);
         } catch (err) {
-          console.error("Error setting remote description:", err);
+          console.error("Error handling offer:", err);
         }
-      }
-    });
+      },
+    );
 
-    newSocket.on("receive-ice-candidate", (data) => {
-      const peerConnection = peersRef.current.get(data.fromSocket);
-      if (peerConnection && data.candidate) {
-        try {
-          peerConnection.peer._pc?.addIceCandidate(
-            new RTCIceCandidate(data.candidate),
-          );
-        } catch (err) {
-          console.error("Error adding ICE candidate:", err);
+    newSocket.on(
+      "receive-answer",
+      (data: { answer: SignalData; fromSocket: string }) => {
+        console.log("Received answer from", data.fromSocket);
+        const peerConnection = peersRef.current.get(data.fromSocket);
+        if (peerConnection) {
+          try {
+            // Signal the peer with the received answer
+            peerConnection.peer.signal(
+              data.answer as RTCSessionDescriptionInit,
+            );
+          } catch (err) {
+            console.error("Error handling answer:", err);
+          }
         }
-      }
-    });
+      },
+    );
+
+    newSocket.on(
+      "receive-ice-candidate",
+      (data: { candidate: SignalData; fromSocket: string }) => {
+        const peerConnection = peersRef.current.get(data.fromSocket);
+        if (peerConnection && data.candidate) {
+          try {
+            // Signal the peer with the ICE candidate
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            peerConnection.peer.signal(data.candidate as any);
+          } catch (err) {
+            console.error("Error adding ICE candidate:", err);
+          }
+        }
+      },
+    );
 
     setSocket(newSocket);
 
@@ -194,7 +267,7 @@ const Communication: React.FC = () => {
       newSocket.emit("leave-room", { roomId, userName });
       newSocket.disconnect();
     };
-  }, [roomId, userName, userId]);
+  }, [roomId, userName, createPeer]);
 
   // Auto scroll to bottom of messages
   useEffect(() => {
@@ -237,53 +310,6 @@ const Communication: React.FC = () => {
     setNewMessage("");
   };
 
-  const createPeer = (
-    initiator: boolean,
-    peerId: string,
-    socket: Socket,
-  ): SimplePeer.Instance => {
-    const peer = new SimplePeer({
-      initiator,
-      trickleIce: true,
-      stream: localStreamRef.current || undefined,
-      config: {
-        iceServers: [
-          { urls: ["stun:stun.l.google.com:19302"] },
-          { urls: ["stun:stun1.l.google.com:19302"] },
-        ],
-      },
-    });
-
-    peer.on("signal", (data) => {
-      if (data.type === "offer") {
-        socket.emit("send-offer", { offer: data, toSocket: peerId });
-      } else if (data.type === "answer") {
-        socket.emit("send-answer", { answer: data, toSocket: peerId });
-      } else if (data.candidate) {
-        socket.emit("send-ice-candidate", {
-          candidate: data,
-          toSocket: peerId,
-        });
-      }
-    });
-
-    peer.on("stream", (stream: MediaStream) => {
-      console.log("Received stream from", peerId);
-      const peerConnection = peersRef.current.get(peerId);
-      if (peerConnection) {
-        peerConnection.stream = stream;
-      }
-    });
-
-    peer.on("error", (err: Error) => {
-      console.error("Peer error:", err);
-      setError(`Peer connection error: ${err.message}`);
-    });
-
-    peersRef.current.set(peerId, { peerId, peer, stream: null });
-    return peer;
-  };
-
   const handleStartCall = async () => {
     try {
       setError("");
@@ -311,8 +337,9 @@ const Communication: React.FC = () => {
           peer.addStream(stream);
         }
       });
-    } catch (err: any) {
-      setError(`Failed to access camera/microphone: ${err.message}`);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      setError(`Failed to access camera/microphone: ${errorMessage}`);
       console.error("Error accessing media devices:", err);
     }
   };
@@ -452,7 +479,11 @@ const Communication: React.FC = () => {
                   </div>
 
                   {/* Remote Participants */}
-                  {Array.from(peersRef.current.values())
+                  {Array.from(
+                    (
+                      peersRef.current as unknown as Map<string, PeerConnection>
+                    ).values(),
+                  )
                     .slice(0, 3)
                     .map((peerConn) => (
                       <div

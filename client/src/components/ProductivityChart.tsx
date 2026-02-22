@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { useTask } from "../hooks/useTask";
 
 const ProductivityChart: React.FC = () => {

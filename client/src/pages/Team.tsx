@@ -101,11 +101,15 @@ const Team: React.FC = () => {
   };
 
   const handleCall = (phone: string) => {
-    window.location.href = `tel:${phone}`;
+    const link = document.createElement("a");
+    link.href = `tel:${phone}`;
+    link.click();
   };
 
   const handleText = (email: string) => {
-    window.location.href = `mailto:${email}`;
+    const link = document.createElement("a");
+    link.href = `mailto:${email}`;
+    link.click();
   };
 
   return (

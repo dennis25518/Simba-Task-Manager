@@ -1,5 +1,5 @@
 import React from "react";
-import { FiUsers, FiCode, FiCheckCircle, FiClock } from "react-icons/fi";
+import { FiUsers, FiCode } from "react-icons/fi";
 import Sidebar from "../components/Sidebar";
 
 interface Project {

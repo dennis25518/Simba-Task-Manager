@@ -4,7 +4,6 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { useState } from "react";
 import { AuthProvider } from "./context/AuthContext";
 import { TaskProvider } from "./context/TaskContext";
 import Auth from "./pages/Auth";
@@ -17,9 +16,9 @@ import Communication from "./pages/Communication";
 import Profile from "./pages/Profile";
 import "./App.css";
 
-function AppContent() {
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+const isAuthenticated = true;
 
+function AppContent() {
   return (
     <Routes>
       <Route
